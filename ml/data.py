@@ -1,9 +1,10 @@
 import numpy as np
 from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
+from sklearn.preprocessing import StandardScaler
 
 
 def process_data(
-    X, categorical_features=[], label=None, training=True, encoder=None, lb=None
+    X, categorical_features=[], label=None, training=True, encoder=None, lb=None, scaler=None
 ):
     """ Process the data used in the machine learning pipeline.
 
@@ -55,11 +56,14 @@ def process_data(
 
     if training is True:
         encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+        scaler = StandardScaler()
         lb = LabelBinarizer()
         X_categorical = encoder.fit_transform(X_categorical)
+        X_continuous = scaler.fit_transform(X_continuous)
         y = lb.fit_transform(y.values).ravel()
     else:
         X_categorical = encoder.transform(X_categorical)
+        X_continuous = scaler.transform(X_continuous)
         try:
             y = lb.transform(y.values).ravel()
         # Catch the case where y is None because we're doing inference.
@@ -67,7 +71,7 @@ def process_data(
             pass
 
     X = np.concatenate([X_continuous, X_categorical], axis=1)
-    return X, y, encoder, lb
+    return X, y, encoder, lb, scaler
 
 def apply_label(inference):
     """ Convert the binary label in a single inference sample into string output."""

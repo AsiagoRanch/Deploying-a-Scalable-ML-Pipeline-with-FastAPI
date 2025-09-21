@@ -26,21 +26,29 @@ class Data(BaseModel):
     hours_per_week: int = Field(..., example=40, alias="hours-per-week")
     native_country: str = Field(..., example="United-States", alias="native-country")
 
-path = None # TODO: enter the path for the saved encoder 
+# Load the scaler
+path = "model/scaler.pkl"
+scaler = load_model(path)
+
+# Load the label binarizer
+path = "model/lb.pkl"
+lb = load_model(path)
+
+path = "model/encoder.pkl" # TODO: enter the path for the saved encoder 
 encoder = load_model(path)
 
-path = None # TODO: enter the path for the saved model 
+path = "model/model.pkl" # TODO: enter the path for the saved model 
 model = load_model(path)
 
 # TODO: create a RESTful API using FastAPI
-app = None # your code here
+app = FastAPI() # your code here
 
 # TODO: create a GET on the root giving a welcome message
 @app.get("/")
 async def get_root():
     """ Say hello!"""
     # your code here
-    pass
+    return {"greeting": "Welcome to the Census Income Prediction API!"}
 
 
 # TODO: create a POST on a different path that does model inference
@@ -64,11 +72,14 @@ async def post_inference(data: Data):
         "sex",
         "native-country",
     ]
-    data_processed, _, _, _ = process_data(
-        # your code here
-        # use data as data input
-        # use training = False
-        # do not need to pass lb as input
+    data_processed, _, _, _, _ = process_data(
+        X=data,
+        categorical_features=cat_features,
+        encoder=encoder,
+        scaler=scaler,
+        training=False
     )
-    _inference = None # your code here to predict the result using data_processed
-    return {"result": apply_label(_inference)}
+    _inference = inference(model, data_processed) # your code here to predict the result using data_processed
+    prediction = lb.inverse_transform(_inference)
+
+    return {"prediction": prediction[0]}
